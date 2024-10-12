@@ -1,7 +1,9 @@
 import requests
 from dotenv import load_dotenv, find_dotenv
 import os
+from pprint import pprint
 import pandas as pd
+from sqlalchemy import create_engine
 
 # Load the environment variables
 load_dotenv(find_dotenv())
@@ -9,6 +11,13 @@ load_dotenv(find_dotenv())
 # API Token & Form ID
 form_id = os.getenv('FORM_ID')
 api_token = os.getenv('API_TOKEN_TYPEFORM')
+
+# Replace these variables with your actual database credentials
+db_username = os.getenv('USERNAME')
+db_password = os.getenv('PASSWORD')
+db_host = os.getenv('HOST')
+db_port = os.getenv('PORT')
+db_name = os.getenv('DATABASE')
 
 # Access the form responses
 url = f'https://api.typeform.com/forms/{form_id}/responses'
@@ -53,10 +62,13 @@ if response.status_code == 200:
     # Create a DataFrame
     df = pd.DataFrame(formatted_responses)
 
-    # Save the DataFrame to a CSV file
-    csv_filename = 'typeform_responses.csv'
-    df.to_csv(csv_filename, index=False)
 
-    print(f'Data saved to {csv_filename}')
-else:
-    print('Error:', response.status_code)
+    # Create the connection string
+    connection_string = f'postgresql://{db_username}:{db_password}@{db_host}:{db_port}/{db_name}'
+    # Create the SQLAlchemy engine
+    engine = create_engine(connection_string)
+
+    # Write the DataFrame to a SQL table
+    df.to_sql('typeform_responses', con=engine, if_exists='replace', index=False)
+
+    print("Connection to SQL database established and Typeform data transferred successfully.")
